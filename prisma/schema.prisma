@@ -1,0 +1,76 @@
+// Schema de datos de Gastia.
+// La URL de conexión vive en prisma.config.ts (Prisma 7 la removió del datasource).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PaymentMethod {
+  CASH
+  DEBIT_CARD
+  CREDIT_CARD
+  TRANSFER
+}
+
+enum Currency {
+  ARS
+  USD
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  categories Category[]
+  expenses   Expense[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  icon      String?
+  color     String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expenses Expense[]
+
+  // Una persona no puede tener dos categorías con el mismo nombre.
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+model Expense {
+  id            String        @id @default(cuid())
+  amount        Decimal       @db.Decimal(12, 2)
+  currency      Currency      @default(ARS)
+  description   String
+  date          DateTime      @db.Date
+  merchant      String?
+  paymentMethod PaymentMethod @default(CASH)
+  ticketUrl     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  // El dashboard filtra siempre por usuario + rango de fechas.
+  @@index([userId, date])
+  @@index([categoryId])
+}
