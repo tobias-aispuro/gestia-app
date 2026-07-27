@@ -1,4 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap");
 @import "tailwindcss";
 
 /* ── Design tokens ─────────────────────────────────────────────────── */
@@ -25,10 +24,13 @@
 
   /* Semantic */
   --positive: #4ade80;
+  --positive-bg: rgba(74, 222, 128, 0.12);
   --negative: #f87171;
-
-  /* Typography */
-  --font-serif: "Instrument Serif", "Georgia", serif;
+  --negative-bg: rgba(248, 113, 113, 0.12);
+  --info: #60a5fa;
+  --info-bg: rgba(96, 165, 250, 0.12);
+  --warning: #fb923c;
+  --warning-bg: rgba(251, 146, 60, 0.12);
 
   /* Spacing rhythm — 4px base */
   --space-1: 4px;
@@ -44,6 +46,7 @@
 
   /* Sidebar */
   --sidebar-width: 60px;
+  --sidebar-width-mobile: 56px;
 }
 
 @theme inline {
@@ -60,10 +63,28 @@
   --color-accent: var(--accent);
   --color-accent-muted: var(--accent-muted);
   --color-positive: var(--positive);
+  --color-positive-bg: var(--positive-bg);
   --color-negative: var(--negative);
+  --color-negative-bg: var(--negative-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-serif: var(--font-serif);
+}
+
+/* Radius/shadow scale — literal overrides of Tailwind's defaults, not aliases
+   (must stay literal here: referencing a same-named custom property from
+   :root would be a self-reference cycle, not an alias). */
+@theme {
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 999px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Base ───────────────────────────────────────────────────────────── */
@@ -87,25 +108,70 @@ body {
   margin: 0;
 }
 
+/* ── Accessibility ──────────────────────────────────────────────────── */
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────────── */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+}
+
 /* ── Typography ─────────────────────────────────────────────────────── */
 
 .heading-display {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-style: normal;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  font-weight: 600;
   color: var(--text-heading);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-}
-
-.heading-display-xl {
-  font-family: var(--font-serif);
-  font-weight: 400;
-  font-style: normal;
-  color: var(--text-heading);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  font-size: 3.5rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .text-label {

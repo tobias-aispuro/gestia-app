@@ -1,5 +1,10 @@
 import type { Currency } from "@/generated/prisma/enums";
 
+/** Une clases condicionales, ignorando valores falsy. */
+export function cn(...classes: Array<string | false | null | undefined>): string {
+  return classes.filter(Boolean).join(" ");
+}
+
 /** Formatea un monto para mostrar, ej. "$ 12.345,67". */
 export function formatAmount(amount: number, currency: Currency): string {
   return new Intl.NumberFormat("es-AR", {

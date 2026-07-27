@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface FilterPillsProps {
   currencies: string[];
@@ -8,6 +9,15 @@ interface FilterPillsProps {
   onCurrencyChange?: (currency: string) => void;
   onCategoryChange?: (categoryId: string | null) => void;
 }
+
+const pillBase =
+  "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 py-1.5 " +
+  "text-xs font-medium tracking-wide cursor-pointer transition-colors duration-200 ease-out";
+
+const pillInactive =
+  "border-border-subtle bg-transparent text-muted hover:border-border-default hover:text-body";
+
+const pillActive = "border-border-default bg-raised text-heading";
 
 export default function FilterPills({
   currencies,
@@ -18,135 +28,62 @@ export default function FilterPills({
   const [activeCurrency, setActiveCurrency] = useState(currencies[0] ?? "ARS");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const pillBase: React.CSSProperties = {
-    padding: "6px 14px",
-    borderRadius: "100px",
-    fontSize: "0.75rem",
-    fontWeight: 500,
-    letterSpacing: "0.03em",
-    border: "1px solid var(--border-subtle)",
-    background: "transparent",
-    color: "var(--text-muted)",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    whiteSpace: "nowrap",
-  };
-
-  const pillActive: React.CSSProperties = {
-    ...pillBase,
-    background: "var(--bg-raised)",
-    color: "var(--text-heading)",
-    borderColor: "var(--border-default)",
-  };
-
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "var(--space-2)",
-        flexWrap: "wrap",
-        marginBottom: "var(--space-8)",
-      }}
-    >
-      {/* Currency pills */}
-      {currencies.map((c) => (
-        <button
-          key={c}
-          style={activeCurrency === c ? pillActive : pillBase}
-          onClick={() => {
-            setActiveCurrency(c);
-            onCurrencyChange?.(c);
-          }}
-          onMouseEnter={(e) => {
-            if (activeCurrency !== c) {
-              e.currentTarget.style.borderColor = "var(--border-default)";
-              e.currentTarget.style.color = "var(--text-body)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeCurrency !== c) {
-              e.currentTarget.style.borderColor = "var(--border-subtle)";
-              e.currentTarget.style.color = "var(--text-muted)";
-            }
-          }}
-        >
-          {c}
-        </button>
-      ))}
+    <div className="mb-6 flex flex-wrap items-center gap-2 sm:mb-8" role="group" aria-label="Filtros">
+      {currencies.map((c) => {
+        const isActive = activeCurrency === c;
+        return (
+          <button
+            key={c}
+            type="button"
+            aria-pressed={isActive}
+            className={cn(pillBase, isActive ? pillActive : pillInactive)}
+            onClick={() => {
+              setActiveCurrency(c);
+              onCurrencyChange?.(c);
+            }}
+          >
+            {c}
+          </button>
+        );
+      })}
 
-      {/* Divider */}
-      <span
-        style={{
-          width: 1,
-          height: 16,
-          background: "var(--border-subtle)",
-          margin: "0 var(--space-1)",
-        }}
-      />
+      <span className="mx-1 h-4 w-px bg-border-subtle" aria-hidden="true" />
 
-      {/* "All" pill */}
       <button
-        style={activeCategory === null ? pillActive : pillBase}
+        type="button"
+        aria-pressed={activeCategory === null}
+        className={cn(pillBase, activeCategory === null ? pillActive : pillInactive)}
         onClick={() => {
           setActiveCategory(null);
           onCategoryChange?.(null);
-        }}
-        onMouseEnter={(e) => {
-          if (activeCategory !== null) {
-            e.currentTarget.style.borderColor = "var(--border-default)";
-            e.currentTarget.style.color = "var(--text-body)";
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (activeCategory !== null) {
-            e.currentTarget.style.borderColor = "var(--border-subtle)";
-            e.currentTarget.style.color = "var(--text-muted)";
-          }
         }}
       >
         Todas
       </button>
 
-      {/* Category pills */}
-      {categories.map((cat) => (
-        <button
-          key={cat.id}
-          style={{
-            ...(activeCategory === cat.id ? pillActive : pillBase),
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-          onClick={() => {
-            setActiveCategory(cat.id);
-            onCategoryChange?.(cat.id);
-          }}
-          onMouseEnter={(e) => {
-            if (activeCategory !== cat.id) {
-              e.currentTarget.style.borderColor = "var(--border-default)";
-              e.currentTarget.style.color = "var(--text-body)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (activeCategory !== cat.id) {
-              e.currentTarget.style.borderColor = "var(--border-subtle)";
-              e.currentTarget.style.color = "var(--text-muted)";
-            }
-          }}
-        >
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: "50%",
-              background: cat.color ?? "var(--text-muted)",
-              flexShrink: 0,
+      {categories.map((cat) => {
+        const isActive = activeCategory === cat.id;
+        return (
+          <button
+            key={cat.id}
+            type="button"
+            aria-pressed={isActive}
+            className={cn(pillBase, isActive ? pillActive : pillInactive)}
+            onClick={() => {
+              setActiveCategory(cat.id);
+              onCategoryChange?.(cat.id);
             }}
-          />
-          {cat.name}
-        </button>
-      ))}
+          >
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ background: cat.color ?? "var(--text-muted)" }}
+              aria-hidden="true"
+            />
+            {cat.name}
+          </button>
+        );
+      })}
     </div>
   );
 }

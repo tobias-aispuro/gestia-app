@@ -25,43 +25,40 @@ export default function CategoryBreakdown({
   currency,
   grandTotal,
 }: CategoryBreakdownProps) {
-  const SIZE = 180;
-  const STROKE = 20;
+  const SIZE = 200;
+  const STROKE = 22;
   const RADIUS = (SIZE - STROKE) / 2;
   const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-  // Build slices with offsets
-  let cumulativeOffset = 0;
-  const slices = categories.map((cat) => {
+  // Build slices with offsets — each slice carries the running end position,
+  // so the next one can read it back without a render-scoped mutable counter.
+  const gapBetween = 3;
+  const slices = categories.reduce<
+    Array<CategorySlice & { fraction: number; dashArray: string; dashOffset: number; cumulativeEnd: number }>
+  >((acc, cat) => {
+    const previousEnd = acc.length > 0 ? acc[acc.length - 1].cumulativeEnd : 0;
     const fraction = grandTotal > 0 ? cat.total / grandTotal : 0;
     const dashLength = fraction * CIRCUMFERENCE;
-    const gapBetween = 3; // small gap between slices
-    const slice = {
+
+    acc.push({
       ...cat,
       fraction,
       dashArray: `${Math.max(0, dashLength - gapBetween)} ${CIRCUMFERENCE}`,
-      dashOffset: -cumulativeOffset,
-    };
-    cumulativeOffset += dashLength;
-    return slice;
-  });
+      dashOffset: -previousEnd,
+      cumulativeEnd: previousEnd + dashLength,
+    });
+    return acc;
+  }, []);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "var(--space-8)",
-      }}
-    >
+    <div className="flex flex-col items-center gap-8">
       {/* Donut chart */}
-      <div style={{ position: "relative", width: SIZE, height: SIZE }}>
+      <div className="relative" style={{ width: SIZE, height: SIZE }}>
         <svg
           width={SIZE}
           height={SIZE}
           viewBox={`0 0 ${SIZE} ${SIZE}`}
-          style={{ transform: "rotate(-90deg)" }}
+          className="-rotate-90"
         >
           {/* Background ring */}
           <circle
@@ -86,124 +83,44 @@ export default function CategoryBreakdown({
               strokeDasharray={slice.dashArray}
               strokeDashoffset={slice.dashOffset}
               strokeLinecap="butt"
-              style={{
-                transition: "stroke-dasharray 0.6s ease, stroke-dashoffset 0.6s ease",
-              }}
+              className="transition-[stroke-dasharray,stroke-dashoffset] duration-500 ease-out"
             />
           ))}
         </svg>
 
         {/* Center label */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "0.625rem",
-              color: "var(--text-faint)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              fontWeight: 500,
-            }}
-          >
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-[0.625rem] font-medium uppercase tracking-widest text-faint">
             Total
           </span>
-          <span
-            style={{
-              fontSize: "0.9375rem",
-              fontWeight: 600,
-              color: "var(--text-heading)",
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
+          <span className="text-[0.9375rem] font-semibold tabular-nums text-heading">
             {formatAmount(grandTotal, currency)}
           </span>
         </div>
       </div>
 
-      {/* Legend */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: "var(--space-2)",
-          width: "100%",
-        }}
-      >
+      {/* Legend — name gets the full row width; share % rides below as a
+          secondary line so category names never get clipped. */}
+      <div className="flex w-full flex-col divide-y divide-border-subtle">
         {slices.map((slice) => {
           const pct = grandTotal > 0 ? ((slice.total / grandTotal) * 100).toFixed(1) : "0.0";
 
           return (
-            <div
-              key={slice.categoryId}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "var(--space-3)",
-                padding: "var(--space-2) 0",
-              }}
-            >
-              {/* Color dot */}
-              <span
-                style={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: "50%",
-                  background: slice.color ?? "var(--text-muted)",
-                  flexShrink: 0,
-                }}
-              />
-
-              {/* Name */}
-              <span
-                style={{
-                  flex: 1,
-                  fontSize: "0.8125rem",
-                  color: "var(--text-body)",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {slice.icon && (
-                  <span style={{ marginRight: "6px" }}>{slice.icon}</span>
-                )}
-                {slice.categoryName}
-              </span>
-
-              {/* Percentage */}
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  color: "var(--text-muted)",
-                  fontVariantNumeric: "tabular-nums",
-                  minWidth: 40,
-                  textAlign: "right",
-                }}
-              >
-                {pct}%
-              </span>
-
-              {/* Amount */}
-              <span
-                style={{
-                  fontSize: "0.8125rem",
-                  fontWeight: 500,
-                  color: "var(--text-heading)",
-                  fontVariantNumeric: "tabular-nums",
-                  minWidth: 90,
-                  textAlign: "right",
-                }}
-              >
-                {formatAmount(slice.total, currency)}
-              </span>
+            <div key={slice.categoryId} className="flex flex-col gap-1 py-2.5 first:pt-0 last:pb-0">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: slice.color ?? "var(--text-muted)" }}
+                />
+                <span className="min-w-0 flex-1 truncate text-[0.8125rem] text-body">
+                  {slice.icon && <span className="mr-1.5">{slice.icon}</span>}
+                  {slice.categoryName}
+                </span>
+                <span className="shrink-0 text-[0.8125rem] font-medium tabular-nums text-heading">
+                  {formatAmount(slice.total, currency)}
+                </span>
+              </div>
+              <span className="pl-[18px] text-xs tabular-nums text-muted">{pct}% del total</span>
             </div>
           );
         })}

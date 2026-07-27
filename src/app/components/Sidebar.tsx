@@ -2,11 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   {
     href: "/",
-    label: "Dashboard",
+    label: "Inicio",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="2" y="2" width="7" height="9" rx="1.5" />
@@ -54,55 +55,22 @@ export default function Sidebar() {
 
   return (
     <aside
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "var(--sidebar-width)",
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        borderRight: "1px solid var(--border-subtle)",
-        background: "var(--bg-root)",
-        zIndex: 50,
-        paddingTop: "24px",
-        gap: "4px",
-      }}
+      className={cn(
+        "fixed z-50 flex border-border-subtle bg-background",
+        // Mobile: bottom tab bar
+        "inset-x-0 bottom-0 h-14 flex-row items-center justify-around border-t px-2 gap-1",
+        // Desktop (sm+): left icon rail
+        "sm:inset-x-auto sm:inset-y-0 sm:bottom-auto sm:left-0 sm:h-screen sm:w-(--sidebar-width)",
+        "sm:flex-col sm:items-center sm:justify-start sm:border-t-0 sm:border-r sm:gap-1 sm:pt-6 sm:px-0",
+      )}
     >
-      {/* Logo mark */}
-      <div
-        style={{
-          width: 28,
-          height: 28,
-          marginBottom: "32px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "var(--font-serif)",
-            fontSize: "1.5rem",
-            color: "var(--text-heading)",
-            lineHeight: 1,
-          }}
-        >
-          G
-        </span>
+      {/* Logo mark — desktop only */}
+      <div className="hidden sm:mb-8 sm:flex sm:h-7 sm:w-7 sm:items-center sm:justify-center">
+        <span className="heading-display text-2xl leading-none">G</span>
       </div>
 
       {/* Nav items */}
-      <nav
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: "4px",
-          flex: 1,
-        }}
-      >
+      <nav className="flex flex-1 flex-row items-center justify-around gap-1 sm:flex-col sm:justify-start sm:gap-1">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
 
@@ -111,49 +79,24 @@ export default function Sidebar() {
               key={item.href}
               href={item.href}
               title={item.label}
-              style={{
-                position: "relative",
-                width: 40,
-                height: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "10px",
-                color: isActive
-                  ? "var(--text-heading)"
-                  : "var(--text-muted)",
-                background: isActive
-                  ? "var(--bg-surface)"
-                  : "transparent",
-                transition: "all 0.2s ease",
-                textDecoration: "none",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.color = "var(--text-body)";
-                  e.currentTarget.style.background = "var(--bg-surface)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.color = "var(--text-muted)";
-                  e.currentTarget.style.background = "transparent";
-                }
-              }}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "relative flex h-10 w-10 items-center justify-center rounded-md",
+                "transition-colors duration-200 ease-out",
+                isActive
+                  ? "bg-surface text-heading"
+                  : "text-muted hover:bg-surface hover:text-body",
+              )}
             >
               {item.icon}
+              <span className="sr-only">{item.label}</span>
               {isActive && (
                 <span
-                  style={{
-                    position: "absolute",
-                    right: -1,
-                    top: "50%",
-                    transform: "translateY(-50%) translateX(50%)",
-                    width: 4,
-                    height: 4,
-                    borderRadius: "50%",
-                    background: "var(--accent)",
-                  }}
+                  className={cn(
+                    "absolute h-1 w-1 rounded-full bg-accent",
+                    "left-1/2 top-0.5 -translate-x-1/2",
+                    "sm:left-auto sm:top-1/2 sm:right-[-1px] sm:translate-x-1/2 sm:-translate-y-1/2",
+                  )}
                 />
               )}
             </Link>
