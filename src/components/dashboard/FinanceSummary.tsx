@@ -1,5 +1,5 @@
 import { formatAmount, cn } from "@/lib/utils";
-import Card from "./ui/Card";
+import Card from "../ui/Card";
 import type { Currency } from "@/types";
 
 interface FinanceSummaryProps {

@@ -1,9 +1,9 @@
-import AddExpenseModal from "./components/AddExpenseModal";
-import EditExpensesModal from "./components/EditExpensesModal";
-import FinanceSummary from "./components/FinanceSummary";
-import SpendingBreakdownCard from "./components/SpendingBreakdownCard";
-import EvolutionChart from "./components/EvolutionChart";
-import Card from "./components/ui/Card";
+import AddExpenseModal from "@/components/expenses/AddExpenseModal";
+import EditExpensesModal from "@/components/expenses/EditExpensesModal";
+import FinanceSummary from "@/components/dashboard/FinanceSummary";
+import SpendingBreakdownCard from "@/components/dashboard/SpendingBreakdownCard";
+import EvolutionChart from "@/components/dashboard/EvolutionChart";
+import Card from "@/components/ui/Card";
 import { Currency } from "@/types";
 import {
   MOCK_CATEGORIES,

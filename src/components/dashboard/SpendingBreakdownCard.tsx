@@ -1,4 +1,4 @@
-import Card from "./ui/Card";
+import Card from "../ui/Card";
 import CategoryBreakdown from "./CategoryBreakdown";
 import type { Currency } from "@/types";
 

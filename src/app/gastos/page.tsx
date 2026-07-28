@@ -1,5 +1,5 @@
-import FilterPills from "../components/FilterPills";
-import ExpensesSection from "../components/ExpensesSection";
+import FilterPills from "@/components/expenses/FilterPills";
+import ExpensesSection from "@/components/expenses/ExpensesSection";
 import { MOCK_CATEGORIES, MOCK_EXPENSES } from "@/lib/mock-data";
 
 export default function GastosPage() {

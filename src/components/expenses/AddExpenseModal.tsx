@@ -3,9 +3,9 @@
 import { useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { cn } from "@/lib/utils";
-import Button from "./ui/Button";
-import Modal from "./ui/Modal";
-import Switch from "./ui/Switch";
+import Button from "../ui/Button";
+import Modal from "../ui/Modal";
+import Switch from "../ui/Switch";
 
 interface CategoryOption {
   id: string;

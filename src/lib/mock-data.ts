@@ -1,5 +1,5 @@
 import { Currency } from "@/types";
-import type { ExpenseRow } from "@/app/components/ExpenseList";
+import type { ExpenseRow } from "@/components/expenses/ExpenseList";
 
 // Datos de muestra compartidos entre la pantalla principal y /gastos.
 // Se reemplazarán por llamadas reales a los services cuando se conecte la autenticación.

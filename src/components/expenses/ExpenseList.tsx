@@ -1,5 +1,5 @@
 import { formatAmount, formatDate } from "@/lib/utils";
-import Badge from "./ui/Badge";
+import Badge from "../ui/Badge";
 import type { Currency } from "@/types";
 
 export interface ExpenseRow {

@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import Button from "./ui/Button";
-import Modal from "./ui/Modal";
-import Input from "./ui/Input";
-import Select from "./ui/Select";
-import Badge from "./ui/Badge";
+import Button from "../ui/Button";
+import Modal from "../ui/Modal";
+import Input from "../ui/Input";
+import Select from "../ui/Select";
+import Badge from "../ui/Badge";
 import { formatAmount, formatDate } from "@/lib/utils";
 import type { ExpenseRow } from "./ExpenseList";
 

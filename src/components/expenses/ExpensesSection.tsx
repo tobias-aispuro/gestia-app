@@ -3,8 +3,8 @@
 import { useState } from "react";
 import ExpenseList from "./ExpenseList";
 import type { ExpenseRow } from "./ExpenseList";
-import Button from "./ui/Button";
-import Modal from "./ui/Modal";
+import Button from "../ui/Button";
+import Modal from "../ui/Modal";
 
 interface ExpensesSectionProps {
   expenses: ExpenseRow[];
