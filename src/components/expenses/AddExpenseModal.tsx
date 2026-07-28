@@ -30,10 +30,39 @@ const pillInput =
   "w-full rounded-full border-none bg-surface px-4 py-3 text-sm text-heading placeholder:text-faint " +
   "outline-none transition-colors duration-150 ease-out hover:bg-raised focus-visible:bg-raised";
 
-/** "5.000,50" (AR) o "50.5" (sin coma) → 5000.5 / 50.5. */
+/**
+ * Acepta "1.500,50" (AR), "1,500.50" (US), "1500,50", "1,500" o "1500" sin
+ * asumir de entrada cuál separador es el decimal.
+ */
 function parseAmountInput(raw: string): number {
-  const normalized = raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw;
-  return Number(normalized);
+  const lastComma = raw.lastIndexOf(",");
+  const lastDot = raw.lastIndexOf(".");
+
+  if (lastComma === -1 && lastDot === -1) {
+    return Number(raw);
+  }
+
+  if (lastComma !== -1 && lastDot !== -1) {
+    // Aparecen los dos: el que está más a la derecha es el decimal, el otro
+    // es separador de miles (ej. "1.500,50" o "1,500.50").
+    const decimalChar = lastComma > lastDot ? "," : ".";
+    const thousandsChar = decimalChar === "," ? "." : ",";
+    const withoutThousands = raw.split(thousandsChar).join("");
+    return Number(decimalChar === "," ? withoutThousands.replace(",", ".") : withoutThousands);
+  }
+
+  // Un solo tipo de separador. Si tiene exactamente 3 dígitos después es de
+  // miles ("1,500" → 1500) — nadie escribe 3 decimales de moneda. Si no,
+  // es el separador decimal ("1,50" → 1.5).
+  const sep = lastComma !== -1 ? "," : ".";
+  const sepIndex = lastComma !== -1 ? lastComma : lastDot;
+  const digitsAfter = raw.length - sepIndex - 1;
+
+  if (digitsAfter === 3) {
+    return Number(raw.split(sep).join(""));
+  }
+
+  return Number(raw.replace(sep, "."));
 }
 
 export default function AddExpenseModal({ categories }: AddExpenseModalProps) {

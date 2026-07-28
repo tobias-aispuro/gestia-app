@@ -1,13 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface FilterPillsProps {
   currencies: string[];
   categories: { id: string; name: string; color: string | null }[];
-  onCurrencyChange?: (currency: string) => void;
-  onCategoryChange?: (categoryId: string | null) => void;
 }
 
 const pillBase =
@@ -19,14 +17,23 @@ const pillInactive =
 
 const pillActive = "border-border-default bg-raised text-heading";
 
-export default function FilterPills({
-  currencies,
-  categories,
-  onCurrencyChange,
-  onCategoryChange,
-}: FilterPillsProps) {
-  const [activeCurrency, setActiveCurrency] = useState(currencies[0] ?? "ARS");
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+export default function FilterPills({ currencies, categories }: FilterPillsProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const activeCurrency = searchParams.get("currency") ?? currencies[0] ?? "ARS";
+  const activeCategory = searchParams.get("categoryId");
+
+  function setParam(key: string, value: string | null) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.push(`${pathname}?${params.toString()}`);
+  }
 
   return (
     <div className="mb-6 flex flex-wrap items-center gap-2 sm:mb-8" role="group" aria-label="Filtros">
@@ -38,10 +45,7 @@ export default function FilterPills({
             type="button"
             aria-pressed={isActive}
             className={cn(pillBase, isActive ? pillActive : pillInactive)}
-            onClick={() => {
-              setActiveCurrency(c);
-              onCurrencyChange?.(c);
-            }}
+            onClick={() => setParam("currency", c)}
           >
             {c}
           </button>
@@ -54,10 +58,7 @@ export default function FilterPills({
         type="button"
         aria-pressed={activeCategory === null}
         className={cn(pillBase, activeCategory === null ? pillActive : pillInactive)}
-        onClick={() => {
-          setActiveCategory(null);
-          onCategoryChange?.(null);
-        }}
+        onClick={() => setParam("categoryId", null)}
       >
         Todas
       </button>
@@ -70,10 +71,7 @@ export default function FilterPills({
             type="button"
             aria-pressed={isActive}
             className={cn(pillBase, isActive ? pillActive : pillInactive)}
-            onClick={() => {
-              setActiveCategory(cat.id);
-              onCategoryChange?.(cat.id);
-            }}
+            onClick={() => setParam("categoryId", cat.id)}
           >
             <span
               className="h-1.5 w-1.5 shrink-0 rounded-full"

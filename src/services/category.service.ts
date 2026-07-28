@@ -2,7 +2,7 @@ import * as repo from "@/repositories/category.repository";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import type { CreateCategoryInput, UpdateCategoryInput } from "@/lib/validators";
 
-/** Categorías que recibe cada usuario nuevo (RF-06). */
+/** Categorías que recibe cada usuario nuevo */
 export const DEFAULT_CATEGORIES = [
   { name: "Supermercado", icon: "🛒", color: "#16A34A" },
   { name: "Transporte", icon: "🚌", color: "#2563EB" },
