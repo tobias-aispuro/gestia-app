@@ -45,8 +45,8 @@
   --space-16: 64px;
 
   /* Sidebar */
-  --sidebar-width: 60px;
-  --sidebar-width-mobile: 56px;
+  --sidebar-width: 224px;
+  --sidebar-width-mobile: 64px;
 }
 
 @theme inline {
