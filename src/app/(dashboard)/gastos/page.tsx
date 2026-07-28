@@ -1,13 +1,26 @@
 import FilterPills from "@/components/expenses/FilterPills";
 import ExpensesSection from "@/components/expenses/ExpensesSection";
-import { MOCK_CATEGORIES, MOCK_EXPENSES } from "@/lib/mock-data";
+import { getCurrentUserId } from "@/lib/auth";
+import * as expenseService from "@/services/expense.service";
+import * as categoryService from "@/services/category.service";
 
-export default function GastosPage() {
+// Ver la nota en src/app/page.tsx: fuerza render dinámico para no depender
+// solo de revalidatePath.
+export const dynamic = "force-dynamic";
+
+export default async function GastosPage() {
+  const userId = await getCurrentUserId();
+
+  const [expenses, categories] = await Promise.all([
+    expenseService.list(userId),
+    categoryService.list(userId),
+  ]);
+
   return (
     <>
-      <FilterPills currencies={["ARS", "USD"]} categories={MOCK_CATEGORIES} />
+      <FilterPills currencies={["ARS", "USD"]} categories={categories} />
 
-      <ExpensesSection expenses={MOCK_EXPENSES} />
+      <ExpensesSection expenses={expenses} />
     </>
   );
 }

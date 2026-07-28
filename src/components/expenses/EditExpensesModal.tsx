@@ -9,6 +9,7 @@ import Select from "../ui/Select";
 import Badge from "../ui/Badge";
 import { formatAmount, formatDate } from "@/lib/utils";
 import type { ExpenseRow } from "./ExpenseList";
+import { updateExpenseAction, deleteExpenseAction } from "@/actions/expense.actions";
 
 interface CategoryOption {
   id: string;
@@ -28,35 +29,78 @@ export default function EditExpensesModal({
   const [open, setOpen] = useState(false);
   const [expenses, setExpenses] = useState(initialExpenses);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const editing = expenses.find((exp) => exp.id === editingId) ?? null;
 
   function close() {
     setOpen(false);
     setEditingId(null);
+    setError(null);
   }
 
-  function handleSave(e: FormEvent<HTMLFormElement>) {
+  function startEditing(id: string) {
+    setEditingId(id);
+    setError(null);
+  }
+
+  async function handleSave(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editing) return;
 
     const form = new FormData(e.currentTarget);
-    const category = categories.find((c) => c.id === String(form.get("categoryId")));
+    const categoryId = String(form.get("categoryId"));
+    const category = categories.find((c) => c.id === categoryId);
 
-    setExpenses((prev) =>
-      prev.map((exp) =>
-        exp.id === editing.id
-          ? {
-              ...exp,
-              description: String(form.get("description")),
-              amount: Number(form.get("amount")),
-              merchant: String(form.get("merchant") || "") || null,
-              category: category ? { name: category.name, color: category.color } : exp.category,
-            }
-          : exp,
-      ),
-    );
-    setEditingId(null);
+    setSubmitting(true);
+    setError(null);
+    try {
+      await updateExpenseAction(editing.id, {
+        description: String(form.get("description")),
+        amount: Number(form.get("amount")),
+        categoryId,
+        merchant: String(form.get("merchant") || ""),
+      });
+
+      setExpenses((prev) =>
+        prev.map((exp) =>
+          exp.id === editing.id
+            ? {
+                ...exp,
+                description: String(form.get("description")),
+                amount: Number(form.get("amount")),
+                merchant: String(form.get("merchant") || "") || null,
+                category: category ? { name: category.name, color: category.color } : exp.category,
+              }
+            : exp,
+        ),
+      );
+      setEditingId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar el cambio.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!editing) return;
+    if (!window.confirm(`¿Eliminar "${editing.description}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    try {
+      await deleteExpenseAction(editing.id);
+      setExpenses((prev) => prev.filter((exp) => exp.id !== editing.id));
+      setEditingId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo eliminar el gasto.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -95,23 +139,33 @@ export default function EditExpensesModal({
 
             <Input name="merchant" label="Comercio" defaultValue={editing.merchant ?? ""} />
 
-            <div className="mt-2 flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => setEditingId(null)}>
-                Volver
+            {error && <p className="text-sm text-negative">{error}</p>}
+
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <Button type="button" variant="danger" onClick={handleDelete} disabled={submitting}>
+                Eliminar
               </Button>
-              <Button type="submit" variant="primary">
-                Guardar cambios
-              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="ghost" onClick={() => setEditingId(null)} disabled={submitting}>
+                  Volver
+                </Button>
+                <Button type="submit" variant="primary" loading={submitting}>
+                  Guardar cambios
+                </Button>
+              </div>
             </div>
           </form>
         ) : (
           <div className="flex flex-col divide-y divide-border-subtle">
+            {expenses.length === 0 && (
+              <p className="py-8 text-center text-sm text-faint">No hay gastos todavía.</p>
+            )}
             {expenses.map((exp) => (
               <button
                 key={exp.id}
                 type="button"
-                onClick={() => setEditingId(exp.id)}
-                className="flex w-full items-center gap-3 py-3 text-left transition-colors duration-150 hover:bg-surface"
+                onClick={() => startEditing(exp.id)}
+                className="flex w-full items-center gap-3 rounded-md px-2 py-3 text-left transition-colors duration-150 hover:bg-surface"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-heading">{exp.description}</p>

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import Button from "../ui/Button";
 import Modal from "../ui/Modal";
 import Switch from "../ui/Switch";
+import { createExpenseAction } from "@/actions/expense.actions";
 
 interface CategoryOption {
   id: string;
@@ -29,6 +30,12 @@ const pillInput =
   "w-full rounded-full border-none bg-surface px-4 py-3 text-sm text-heading placeholder:text-faint " +
   "outline-none transition-colors duration-150 ease-out hover:bg-raised focus-visible:bg-raised";
 
+/** "5.000,50" (AR) o "50.5" (sin coma) → 5000.5 / 50.5. */
+function parseAmountInput(raw: string): number {
+  const normalized = raw.includes(",") ? raw.replace(/\./g, "").replace(",", ".") : raw;
+  return Number(normalized);
+}
+
 export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<(typeof MOVEMENT_TYPES)[number]["value"]>("gasto");
@@ -39,6 +46,8 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
   const [localCategories, setLocalCategories] = useState(categories);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function reset() {
     setType("gasto");
@@ -47,6 +56,7 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
     setCategoryId(null);
     setAddingCategory(false);
     setNewCategoryName("");
+    setError(null);
   }
 
   function close() {
@@ -54,9 +64,40 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
     reset();
   }
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    close();
+    setError(null);
+
+    if (type !== "gasto") {
+      // Ingresos e inversiones todavía no tienen modelo en la base — no se guardan.
+      close();
+      return;
+    }
+
+    if (!categoryId || !categories.some((c) => c.id === categoryId)) {
+      setError("Elegí una categoría existente — crear categorías nuevas todavía no está disponible.");
+      return;
+    }
+
+    const parsedAmount = parseAmountInput(amount);
+    const form = new FormData(e.currentTarget);
+
+    setSubmitting(true);
+    try {
+      await createExpenseAction({
+        amount: parsedAmount,
+        currency: CURRENCIES[currencyIndex],
+        description: String(form.get("description")),
+        date: String(form.get("date")),
+        categoryId,
+        paymentMethod: "CASH",
+      });
+      close();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar el gasto.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   function commitNewCategory() {
@@ -217,7 +258,14 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
             />
           </div>
 
-          <Button type="submit" variant="primary" className="w-full py-3 text-base font-semibold tracking-wide uppercase">
+          {error && <p className="text-sm text-negative">{error}</p>}
+
+          <Button
+            type="submit"
+            variant="primary"
+            loading={submitting}
+            className="w-full py-3 text-base font-semibold tracking-wide uppercase"
+          >
             Guardar
           </Button>
         </form>
