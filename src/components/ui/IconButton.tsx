@@ -22,7 +22,7 @@ export default function IconButton({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center rounded-md cursor-pointer",
+        "inline-flex items-center justify-center rounded-full cursor-pointer",
         "transition-colors duration-200 ease-out",
         "disabled:pointer-events-none disabled:opacity-45",
         active

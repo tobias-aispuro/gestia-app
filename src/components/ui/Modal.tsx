@@ -33,6 +33,14 @@ export default function Modal({ open, onClose, title, children, size = "md" }: M
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<Element | null>(null);
 
+  // Ref en vez de dependencia directa: si `onClose` no está memoizado en el
+  // caller (ej. cambia en cada tecla que se tipea dentro del modal), no
+  // queremos que el efecto de abajo se vuelva a disparar y robe el foco.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!open) return;
 
@@ -45,7 +53,7 @@ export default function Modal({ open, onClose, title, children, size = "md" }: M
 
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key === "Tab" && panel) {
@@ -69,7 +77,7 @@ export default function Modal({ open, onClose, title, children, size = "md" }: M
       document.body.style.overflow = "";
       (triggerRef.current as HTMLElement | null)?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!mounted || !open) return null;
 
@@ -99,7 +107,7 @@ export default function Modal({ open, onClose, title, children, size = "md" }: M
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-surface hover:text-body transition-colors duration-150 cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-body transition-colors duration-150 cursor-pointer"
           >
             ×
           </button>
