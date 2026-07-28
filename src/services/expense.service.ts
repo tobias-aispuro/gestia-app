@@ -1,3 +1,4 @@
+import { cache } from "react";
 import * as repo from "@/repositories/expense.repository";
 import * as categoryRepo from "@/repositories/category.repository";
 import type { ExpenseWithCategory } from "@/repositories/expense.repository";
@@ -94,13 +95,17 @@ export async function remove(id: string, userId: string): Promise<void> {
   }
 }
 
-/** Resumen mensual del dashboard (RF-05). */
-export async function monthlySummary(
+/**
+ * Resumen mensual del dashboard (RF-05).
+ * cache(): lo piden dos secciones independientes de la home (Balance y
+ * Distribución) — comparten esta misma promesa en vez de duplicar la query.
+ */
+export const monthlySummary = cache(async (
   userId: string,
   year: number,
   month: number,
   currency: Currency,
-): Promise<MonthlySummary> {
+): Promise<MonthlySummary> => {
   const [grouped, categories] = await Promise.all([
     repo.sumByCategory(userId, year, month, currency),
     categoryRepo.findAllByUser(userId),
@@ -131,4 +136,40 @@ export async function monthlySummary(
     expenseCount: byCategory.reduce((sum, c) => sum + c.expenseCount, 0),
     byCategory,
   };
+});
+
+const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+
+/**
+ * Últimos `months` meses (incluyendo el actual), para el gráfico de evolución.
+ * Una sola query de rango + agrupado en JS — llamar a monthlySummary() una vez
+ * por mes eran 2 queries × N meses solo para esto.
+ */
+export async function recentMonthlyTotals(
+  userId: string,
+  currency: Currency,
+  months: number,
+): Promise<{ label: string; total: number }[]> {
+  const now = new Date();
+
+  const periods = Array.from({ length: months }, (_, i) => {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1 - i), 1));
+    return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
+  });
+
+  const rangeStart = new Date(Date.UTC(periods[0].year, periods[0].month - 1, 1));
+  const rangeEnd = new Date(Date.UTC(periods[months - 1].year, periods[months - 1].month, 1));
+
+  const rows = await repo.findAmountsInRange(userId, currency, rangeStart, rangeEnd);
+
+  const totalsByKey = new Map<string, number>();
+  for (const row of rows) {
+    const key = `${row.date.getUTCFullYear()}-${row.date.getUTCMonth() + 1}`;
+    totalsByKey.set(key, (totalsByKey.get(key) ?? 0) + Number(row.amount));
+  }
+
+  return periods.map(({ year, month }) => ({
+    label: MONTH_LABELS[month - 1],
+    total: totalsByKey.get(`${year}-${month}`) ?? 0,
+  }));
 }

@@ -88,3 +88,11 @@ export function sumByCategory(userId: string, year: number, month: number, curre
     _count: { _all: true },
   });
 }
+
+/** Montos y fechas en un rango — para agrupar por mes en JS sin una query por mes. */
+export function findAmountsInRange(userId: string, currency: Currency, gte: Date, lt: Date) {
+  return prisma.expense.findMany({
+    where: { userId, currency, date: { gte, lt } },
+    select: { amount: true, date: true },
+  });
+}
