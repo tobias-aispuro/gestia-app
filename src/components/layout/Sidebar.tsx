@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
@@ -113,6 +114,13 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Cuenta — desktop only, pegado abajo del rail.
+          El redirect a /sign-in tras cerrar sesión lo maneja el middleware
+          (__internal_invokeMiddlewareOnAuthStateChange, default true), no un prop acá. */}
+      <div className="hidden sm:mt-auto sm:flex sm:items-center sm:px-2 sm:pt-4">
+        <UserButton />
+      </div>
     </aside>
   );
 }

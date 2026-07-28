@@ -1,7 +1,32 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
-import Sidebar from "@/components/layout/Sidebar";
 import "./globals.css";
+
+// @clerk/themes todavía no soporta @clerk/nextjs 7.x (su última versión estable
+// sigue atada a @clerk/shared v3), así que el tema oscuro va a mano acá con
+// las variables de diseño que ya usa el resto de la app.
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#d4a853",
+    colorBackground: "#1a1a19",
+    colorInputBackground: "#222221",
+    colorInputText: "#ededec",
+    colorText: "#ededec",
+    colorTextSecondary: "#a3a39e",
+    colorNeutral: "#ededec",
+    colorDanger: "#f87171",
+    borderRadius: "10px",
+  },
+  // Los `variables` de arriba no llegan a estos elementos puntuales (quedaban
+  // del mismo color que el fondo, ilegibles) — se pisan a mano.
+  elements: {
+    headerTitle: { color: "#ededec" },
+    headerSubtitle: { color: "#a3a39e" },
+    footerActionText: { color: "#a3a39e" },
+    footerActionLink: { color: "#d4a853" },
+  },
+};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,21 +50,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable}`}
-    >
-      <body>
-        <div className="flex min-h-screen">
-          <Sidebar />
-
-          {/* Offset by sidebar width on desktop, bottom bar on mobile.
-              No max-width: fills the rest of the viewport instead of hugging the left edge. */}
-          <main className="w-full flex-1 px-4 pt-8 pb-24 sm:ml-(--sidebar-width) sm:px-8 sm:pt-12 sm:pb-12 md:px-12 lg:px-16 xl:px-20 2xl:px-24">
-            {children}
-          </main>
-        </div>
-      </body>
-    </html>
+    <ClerkProvider appearance={clerkAppearance}>
+      <html
+        lang="es"
+        className={`${geistSans.variable} ${geistMono.variable}`}
+      >
+        <body>{children}</body>
+      </html>
+    </ClerkProvider>
   );
 }

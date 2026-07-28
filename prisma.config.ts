@@ -9,7 +9,6 @@ export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
-    seed: "tsx prisma/seed.ts",
   },
   datasource: {
     // No usamos env() de prisma/config: tira error si la variable falta, y eso
