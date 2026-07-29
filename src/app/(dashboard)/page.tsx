@@ -9,6 +9,7 @@ import { Currency } from "@/types";
 import { getCurrentUserId, getCurrentUserName } from "@/lib/auth";
 import * as expenseService from "@/services/expense.service";
 import * as categoryService from "@/services/category.service";
+import * as financeService from "@/services/finance.service";
 
 // Prisma no es `fetch`, así que Next no detecta que la data es dinámica por sí
 // solo — sin esto, la build la deja prerenderizada como estática (revalidatePath
@@ -72,21 +73,19 @@ export default async function HomePage() {
 
 async function FinanceSummarySection({ userId }: { userId: string }) {
   const now = new Date();
-  const summary = await expenseService.monthlySummary(
+  const overview = await financeService.overview(
     userId,
     now.getFullYear(),
     now.getMonth() + 1,
     Currency.ARS,
   );
 
-  // Todavía no hay modelo de ingresos en la base (solo Expense) — queda en 0
-  // hasta que se defina esa feature.
   return (
     <FinanceSummary
-      currency={Currency.ARS}
-      balanceAcumulado={0}
-      ingresos={0}
-      gastos={summary.total}
+      currency={overview.currency}
+      balanceAcumulado={overview.balanceAcumulado}
+      ingresos={overview.ingresos}
+      gastos={overview.gastos}
     />
   );
 }
@@ -110,12 +109,12 @@ async function SpendingBreakdownSection({ userId }: { userId: string }) {
 }
 
 async function EvolutionSection({ userId }: { userId: string }) {
-  const evolution = await expenseService.recentMonthlyTotals(userId, Currency.ARS, 6);
+  const evolution = await financeService.recentMonthlyComparison(userId, Currency.ARS, 6);
 
   return (
     <Card>
       <h2 className="heading-display mb-6 text-lg">Tu evolución</h2>
-      <EvolutionChart data={evolution} />
+      <EvolutionChart data={evolution} currency={Currency.ARS} />
     </Card>
   );
 }

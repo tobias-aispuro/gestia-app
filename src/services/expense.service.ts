@@ -138,38 +138,10 @@ export const monthlySummary = cache(async (
   };
 });
 
-const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-
-/**
- * Últimos `months` meses (incluyendo el actual), para el gráfico de evolución.
- * Una sola query de rango + agrupado en JS — llamar a monthlySummary() una vez
- * por mes eran 2 queries × N meses solo para esto.
- */
-export async function recentMonthlyTotals(
-  userId: string,
-  currency: Currency,
-  months: number,
-): Promise<{ label: string; total: number }[]> {
-  const now = new Date();
-
-  const periods = Array.from({ length: months }, (_, i) => {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (months - 1 - i), 1));
-    return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 };
-  });
-
-  const rangeStart = new Date(Date.UTC(periods[0].year, periods[0].month - 1, 1));
-  const rangeEnd = new Date(Date.UTC(periods[months - 1].year, periods[months - 1].month, 1));
-
-  const rows = await repo.findAmountsInRange(userId, currency, rangeStart, rangeEnd);
-
-  const totalsByKey = new Map<string, number>();
-  for (const row of rows) {
-    const key = `${row.date.getUTCFullYear()}-${row.date.getUTCMonth() + 1}`;
-    totalsByKey.set(key, (totalsByKey.get(key) ?? 0) + Number(row.amount));
-  }
-
-  return periods.map(({ year, month }) => ({
-    label: MONTH_LABELS[month - 1],
-    total: totalsByKey.get(`${year}-${month}`) ?? 0,
-  }));
+/** Total histórico de gastos — la mitad negativa del balance acumulado. */
+export async function allTimeTotal(userId: string, currency: Currency): Promise<number> {
+  return Number((await repo.sumAllTime(userId, currency)) ?? 0);
 }
+
+// El gráfico de evolución pasó a enfrentar gastos contra ingresos: esa versión
+// de una sola serie vive ahora en finance.service.recentMonthlyComparison().

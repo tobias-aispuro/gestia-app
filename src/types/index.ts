@@ -4,6 +4,7 @@ import type { Currency, PaymentMethod } from "@/generated/prisma/enums";
 export type {
   CategoryModel as Category,
   ExpenseModel as Expense,
+  IncomeModel as Income,
   UserModel as User,
 } from "@/generated/prisma/models";
 export { Currency, PaymentMethod } from "@/generated/prisma/enums";
@@ -27,6 +28,33 @@ export interface ExpenseView {
     icon: string | null;
     color: string | null;
   };
+}
+
+/** Ingreso listo para la UI: el Decimal de Prisma ya viene convertido a number. */
+export interface IncomeView {
+  id: string;
+  amount: number;
+  currency: Currency;
+  description: string;
+  date: Date;
+  source: string | null;
+}
+
+/** Los cuatro números del bloque de balance del dashboard. */
+export interface FinanceOverview {
+  currency: Currency;
+  /** Histórico completo: todos los ingresos menos todos los gastos. */
+  balanceAcumulado: number;
+  /** Del mes en curso. */
+  ingresos: number;
+  gastos: number;
+}
+
+/** Un mes del gráfico de evolución: los dos lados enfrentados. */
+export interface MonthlyComparisonPoint {
+  label: string;
+  ingresos: number;
+  gastos: number;
 }
 
 export interface CategoryTotal {

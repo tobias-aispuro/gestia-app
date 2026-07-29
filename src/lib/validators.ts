@@ -26,6 +26,18 @@ export const listExpensesSchema = z.object({
   maxAmount: z.coerce.number().nonnegative().optional(),
 });
 
+// Mismas reglas de monto/fecha que un gasto: es la contraparte positiva del
+// balance y tiene que validar igual de estricto.
+export const createIncomeSchema = z.object({
+  amount: z.coerce.number().positive("El monto debe ser mayor a 0").max(9_999_999_999),
+  currency: z.enum(Currency).default(Currency.ARS),
+  description: z.string().trim().min(1, "La descripción es obligatoria").max(200),
+  date: z.iso.date("Fecha inválida (se espera YYYY-MM-DD)"),
+  source: z.string().trim().max(120).optional(),
+});
+
+export const updateIncomeSchema = createIncomeSchema.partial();
+
 export const createCategorySchema = z.object({
   name: z.string().trim().min(1, "El nombre es obligatorio").max(50),
   icon: z.string().trim().max(16).optional(),
@@ -40,5 +52,7 @@ export const updateCategorySchema = createCategorySchema.partial();
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 export type ListExpensesFilters = z.infer<typeof listExpensesSchema>;
+export type CreateIncomeInput = z.infer<typeof createIncomeSchema>;
+export type UpdateIncomeInput = z.infer<typeof updateIncomeSchema>;
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;

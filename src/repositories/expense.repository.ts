@@ -89,6 +89,16 @@ export function sumByCategory(userId: string, year: number, month: number, curre
   });
 }
 
+/** Total histórico de gastos — la mitad negativa del balance acumulado. */
+export async function sumAllTime(userId: string, currency: Currency) {
+  const { _sum } = await prisma.expense.aggregate({
+    where: { userId, currency },
+    _sum: { amount: true },
+  });
+
+  return _sum.amount;
+}
+
 /** Montos y fechas en un rango — para agrupar por mes en JS sin una query por mes. */
 export function findAmountsInRange(userId: string, currency: Currency, gte: Date, lt: Date) {
   return prisma.expense.findMany({

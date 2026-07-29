@@ -14,6 +14,16 @@ export function formatAmount(amount: number, currency: Currency): string {
   }).format(amount);
 }
 
+/** Versión corta para ejes de gráficos, ej. "$ 12,3 mil". */
+export function formatCompactAmount(amount: number, currency: Currency): string {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency,
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(amount);
+}
+
 /** Formatea una fecha para mostrar, ej. "26 jul 2026". */
 export function formatDate(date: Date): string {
   return new Intl.DateTimeFormat("es-AR", {

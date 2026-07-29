@@ -7,6 +7,7 @@ import Button from "../ui/Button";
 import Modal from "../ui/Modal";
 import Switch from "../ui/Switch";
 import { createExpenseAction } from "@/actions/expense.actions";
+import { createIncomeAction } from "@/actions/income.actions";
 
 interface CategoryOption {
   id: string;
@@ -97,9 +98,36 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
     e.preventDefault();
     setError(null);
 
-    if (type !== "gasto") {
-      // Ingresos e inversiones todavía no tienen modelo en la base — no se guardan.
-      close();
+    if (type === "inversion") {
+      // Sin modelo en la base todavía. Antes esto cerraba el modal en silencio
+      // y el movimiento se perdía sin aviso.
+      setError("Las inversiones todavía no se pueden guardar.");
+      return;
+    }
+
+    const form = new FormData(e.currentTarget);
+    const parsedAmount = parseAmountInput(amount);
+    const note = form.get("note");
+    const description = String(form.get("description"));
+    const date = String(form.get("date"));
+    const currency = CURRENCIES[currencyIndex];
+
+    if (type === "ingreso") {
+      setSubmitting(true);
+      try {
+        await createIncomeAction({
+          amount: parsedAmount,
+          currency,
+          description,
+          date,
+          source: typeof note === "string" && note.trim() ? note.trim() : undefined,
+        });
+        close();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "No se pudo guardar el ingreso.");
+      } finally {
+        setSubmitting(false);
+      }
       return;
     }
 
@@ -108,16 +136,13 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
       return;
     }
 
-    const parsedAmount = parseAmountInput(amount);
-    const form = new FormData(e.currentTarget);
-
     setSubmitting(true);
     try {
       await createExpenseAction({
         amount: parsedAmount,
-        currency: CURRENCIES[currencyIndex],
-        description: String(form.get("description")),
-        date: String(form.get("date")),
+        currency,
+        description,
+        date,
         categoryId,
         paymentMethod: "CASH",
       });
@@ -219,15 +244,19 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
             required
             className={pillInput}
           />
+          {/* En un ingreso este campo se guarda como `source` ("de dónde vino"):
+              Income no tiene categorías, así que es lo único que lo clasifica. */}
           <input
             type="text"
             name="note"
-            placeholder="Nota (opcional)"
+            placeholder={
+              type === "ingreso" ? "¿De dónde vino? (opcional)" : "Nota (opcional)"
+            }
             className={pillInput}
           />
 
-          {/* Categorías */}
-          <div className="flex flex-wrap gap-2">
+          {/* Categorías — solo para gastos: Income no tiene categoryId. */}
+          <div className={cn("flex-wrap gap-2", type === "ingreso" ? "hidden" : "flex")}>
             {localCategories.map((cat) => {
               const isActive = categoryId === cat.id;
               return (

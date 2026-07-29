@@ -10,4 +10,5 @@ export { default as Textarea } from "./Textarea";
 export { default as Modal } from "./Modal";
 export { default as Menu } from "./Menu";
 export { default as Switch } from "./Switch";
+export { default as Spinner } from "./Spinner";
 export type { MenuItem } from "./Menu";
