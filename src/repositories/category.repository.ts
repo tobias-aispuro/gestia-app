@@ -21,6 +21,15 @@ export function findById(id: string, userId: string) {
   });
 }
 
+// El @@unique([userId, name]) del schema es el guard real; esto existe para
+// poder avisar con un mensaje propio antes de que la base tire un P2002 crudo.
+// `mode: "insensitive"` para que "Viajes" no conviva con "viajes".
+export function findByName(userId: string, name: string) {
+  return prisma.category.findFirst({
+    where: { userId, name: { equals: name, mode: "insensitive" } },
+  });
+}
+
 export function create(userId: string, data: CreateCategoryInput) {
   return prisma.category.create({
     data: { ...data, userId },

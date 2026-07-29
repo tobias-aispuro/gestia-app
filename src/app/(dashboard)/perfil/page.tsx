@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import SignOutButton from "@/components/layout/SignOutButton";
+import OwnCategoryList from "@/components/categories/OwnCategoryList";
 import { getCurrentUserId } from "@/lib/auth";
 import * as categoryService from "@/services/category.service";
 
@@ -91,7 +92,10 @@ async function CategoriesCard() {
 
       {own.length > 0 && (
         <div className="mt-6">
-          <CategoryGroup label="Propias" categories={own} />
+          {/* Solo las propias se pueden borrar: las predefinidas no tienen forma
+              de volver (seedDefaults corre una única vez, en el primer login). */}
+          <p className="text-label mb-3">Propias</p>
+          <OwnCategoryList categories={own} />
         </div>
       )}
     </Card>

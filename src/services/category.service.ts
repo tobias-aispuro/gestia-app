@@ -27,8 +27,54 @@ export async function getById(id: string, userId: string) {
   return category;
 }
 
-export function create(userId: string, input: CreateCategoryInput) {
-  return repo.create(userId, input);
+/**
+ * Paleta para las categorías que crea el usuario. Sin color, el punto que
+ * `FilterPills` pinta al lado del nombre queda gris y desentona con las 7
+ * predefinidas. Se elige por hash del nombre para que sea estable: la misma
+ * categoría siempre sale del mismo color, sin guardar un contador aparte.
+ */
+const CATEGORY_COLORS = [
+  "#0891B2",
+  "#65A30D",
+  "#EA580C",
+  "#9333EA",
+  "#0D9488",
+  "#E11D48",
+  "#4F46E5",
+] as const;
+
+function colorFor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (Math.imul(hash, 31) + name.charCodeAt(i)) | 0;
+  }
+
+  // El hash sin mezclar reparte mal contra un módulo chico: sobre 7000 nombres
+  // caían 4 de los 7 colores. Este finalizador (xor-shift + multiplicación)
+  // lo deja parejo dentro del ±8%.
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, 0x45d9f3b);
+  hash ^= hash >>> 16;
+
+  return CATEGORY_COLORS[(hash >>> 0) % CATEGORY_COLORS.length];
+}
+
+export async function create(userId: string, input: CreateCategoryInput) {
+  // El schema de Zod ya recorta, pero el service no puede depender de que el
+  // caller haya validado: sin esto, "  viajes  " no matchea contra "Viajes" y
+  // entra como categoría nueva con espacios adentro del nombre.
+  const name = input.name.trim();
+  const existing = await repo.findByName(userId, name);
+
+  if (existing) {
+    throw new ConflictError(`Ya tenés una categoría llamada "${existing.name}"`);
+  }
+
+  return repo.create(userId, {
+    ...input,
+    name,
+    color: input.color ?? colorFor(name),
+  });
 }
 
 export async function update(id: string, userId: string, input: UpdateCategoryInput) {
@@ -42,6 +88,21 @@ export async function update(id: string, userId: string, input: UpdateCategoryIn
 }
 
 export async function remove(id: string, userId: string) {
+  const category = await repo.findById(id, userId);
+
+  if (!category) {
+    throw new NotFoundError("La categoría no existe");
+  }
+
+  // Las 7 predefinidas son el piso que se siembra al alta y no hay forma de
+  // recuperarlas desde la UI si se borran (seedDefaults solo corre en el primer
+  // login). La UI solo ofrece borrar las propias; esto es el backstop del server.
+  if (category.isDefault) {
+    throw new ConflictError(
+      `"${category.name}" es una categoría predefinida y no se puede eliminar`,
+    );
+  }
+
   // Borrar una categoría con gastos dejaría huérfanos esos registros: el FK es
   // onDelete: Restrict, así que avisamos antes de que la base tire el error.
   const expenseCount = await repo.countExpenses(id, userId);

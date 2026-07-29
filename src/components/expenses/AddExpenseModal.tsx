@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
-import { cn } from "@/lib/utils";
+import { cn, toDateInputValue } from "@/lib/utils";
 import Button from "../ui/Button";
+import DatePicker from "../ui/DatePicker";
 import Modal from "../ui/Modal";
+import Spinner from "../ui/Spinner";
 import Switch from "../ui/Switch";
 import { createExpenseAction } from "@/actions/expense.actions";
 import { createIncomeAction } from "@/actions/income.actions";
+import { createCategoryAction } from "@/actions/category.actions";
 
 interface CategoryOption {
   id: string;
@@ -72,21 +75,40 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
   const [recurring, setRecurring] = useState(false);
   const [amount, setAmount] = useState("");
   const [currencyIndex, setCurrencyIndex] = useState(0);
+  // Controlado, no FormData: DatePicker no es un <input> nativo. Se recalcula
+  // en cada apertura del modal (ver reset) para que no quede clavado en el día
+  // en que se montó la página.
+  const [date, setDate] = useState(() => toDateInputValue(new Date()));
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [localCategories, setLocalCategories] = useState(categories);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [extraCategories, setExtraCategories] = useState<CategoryOption[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const creatingCategoryRef = useRef(false);
+
+  // `categories` llega del server component y es la fuente de verdad. Una
+  // categoría recién creada se pinta desde `extraCategories` apenas responde la
+  // acción, y se cae sola de esa lista cuando la revalidación la trae en las
+  // props — así no se duplica ni se queda vieja.
+  const knownIds = new Set(categories.map((c) => c.id));
+  const allCategories = [
+    ...categories,
+    ...extraCategories.filter((c) => !knownIds.has(c.id)),
+  ];
 
   function reset() {
     setType("gasto");
     setRecurring(false);
     setAmount("");
+    setDate(toDateInputValue(new Date()));
     setCategoryId(null);
     setAddingCategory(false);
     setNewCategoryName("");
     setError(null);
+    // `extraCategories` no se limpia a propósito: la categoría ya existe en la
+    // base y el filtro de arriba la deduplica contra las props.
   }
 
   function close() {
@@ -109,7 +131,6 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
     const parsedAmount = parseAmountInput(amount);
     const note = form.get("note");
     const description = String(form.get("description"));
-    const date = String(form.get("date"));
     const currency = CURRENCIES[currencyIndex];
 
     if (type === "ingreso") {
@@ -131,8 +152,8 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
       return;
     }
 
-    if (!categoryId || !categories.some((c) => c.id === categoryId)) {
-      setError("Elegí una categoría existente — crear categorías nuevas todavía no está disponible.");
+    if (!categoryId || !allCategories.some((c) => c.id === categoryId)) {
+      setError("Elegí una categoría.");
       return;
     }
 
@@ -154,24 +175,60 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
     }
   }
 
-  function commitNewCategory() {
-    const name = newCategoryName.trim();
-    if (name) {
-      const id = `local-${Date.now()}`;
-      setLocalCategories((prev) => [...prev, { id, name, icon: "🏷️" }]);
-      setCategoryId(id);
-    }
+  function cancelNewCategory() {
     setAddingCategory(false);
     setNewCategoryName("");
+  }
+
+  async function commitNewCategory() {
+    const name = newCategoryName.trim();
+
+    if (!name) {
+      cancelNewCategory();
+      return;
+    }
+
+    // Enter y blur pueden llegar casi juntos (confirmar desenfoca el input):
+    // sin este guard la categoría se crearía dos veces y la segunda rebotaría
+    // contra el unique de la base.
+    if (creatingCategoryRef.current) return;
+    creatingCategoryRef.current = true;
+
+    setCreatingCategory(true);
+    setError(null);
+
+    try {
+      const result = await createCategoryAction({ name, icon: "🏷️" });
+
+      if (!result.ok) {
+        // El input queda abierto con el texto puesto para poder corregirlo.
+        setError(result.error);
+        return;
+      }
+
+      setExtraCategories((prev) => [...prev, result.category]);
+      setCategoryId(result.category.id);
+      cancelNewCategory();
+    } catch {
+      setError("No se pudo crear la categoría.");
+    } finally {
+      creatingCategoryRef.current = false;
+      setCreatingCategory(false);
+    }
   }
 
   function handleNewCategoryKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter") {
       e.preventDefault();
-      commitNewCategory();
+      void commitNewCategory();
     } else if (e.key === "Escape") {
-      setAddingCategory(false);
-      setNewCategoryName("");
+      // Modal engancha su propio listener de Escape en `document` para cerrarse.
+      // stopImmediatePropagation y no stopPropagation: según dónde React monte
+      // su root, los dos listeners pueden terminar en el mismo nodo, y ahí
+      // stopPropagation no alcanza. Acá Escape solo cancela el input.
+      e.nativeEvent.stopImmediatePropagation();
+      e.preventDefault();
+      cancelNewCategory();
     }
   }
 
@@ -257,7 +314,7 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
 
           {/* Categorías — solo para gastos: Income no tiene categoryId. */}
           <div className={cn("flex-wrap gap-2", type === "ingreso" ? "hidden" : "flex")}>
-            {localCategories.map((cat) => {
+            {allCategories.map((cat) => {
               const isActive = categoryId === cat.id;
               return (
                 <button
@@ -280,16 +337,22 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
             })}
 
             {addingCategory ? (
-              <input
-                type="text"
-                autoFocus
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                onKeyDown={handleNewCategoryKeyDown}
-                onBlur={commitNewCategory}
-                placeholder="Nombre de la categoría"
-                className="rounded-full border border-border-default bg-transparent px-3.5 py-2 text-sm text-heading placeholder:text-faint outline-none"
-              />
+              <span className="inline-flex items-center gap-2 rounded-full border border-border-default px-3.5 py-2">
+                <input
+                  type="text"
+                  autoFocus
+                  maxLength={50}
+                  disabled={creatingCategory}
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={handleNewCategoryKeyDown}
+                  onBlur={() => void commitNewCategory()}
+                  aria-label="Nombre de la categoría nueva"
+                  placeholder="Nombre de la categoría"
+                  className="w-44 border-none bg-transparent text-sm text-heading placeholder:text-faint outline-none disabled:opacity-60"
+                />
+                {creatingCategory && <Spinner size="sm" className="text-muted" />}
+              </span>
             ) : (
               <button
                 type="button"
@@ -302,19 +365,7 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
           </div>
 
           {/* Fecha */}
-          <div>
-            <label htmlFor="movement-date" className="mb-1.5 block text-sm text-muted">
-              Fecha
-            </label>
-            <input
-              id="movement-date"
-              type="date"
-              name="date"
-              required
-              defaultValue={new Date().toISOString().slice(0, 10)}
-              className="w-full rounded-full border-none bg-surface px-4 py-3 text-sm text-heading outline-none transition-colors duration-150 ease-out hover:bg-raised focus-visible:bg-raised"
-            />
-          </div>
+          <DatePicker label="Fecha" value={date} onChange={setDate} />
 
           {error && <p className="text-sm text-negative">{error}</p>}
 
