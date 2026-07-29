@@ -34,12 +34,38 @@ const triggerLabel = new Intl.DateTimeFormat("es-AR", {
 });
 const fullDate = new Intl.DateTimeFormat("es-AR", { dateStyle: "full" });
 
+/**
+ * ¿El pointerdown cayó sobre una barra de scroll y no sobre el contenido?
+ *
+ * Un click en la barra tiene como target al elemento que scrollea, así que no
+ * se puede distinguir por el target: hay que mirar las coordenadas.
+ * `clientWidth`/`clientHeight` excluyen la barra, el bounding rect la incluye;
+ * si el punto quedó pasando ese borde, fue sobre la barra.
+ */
+function isScrollbarPointerDown(e: PointerEvent): boolean {
+  const target = e.target;
+
+  if (!(target instanceof HTMLElement)) return false;
+  // Sin overflow no hay barra que clickear (y evita falsos positivos sobre el
+  // borde derecho/inferior de cualquier elemento con border).
+  if (target.scrollHeight <= target.clientHeight && target.scrollWidth <= target.clientWidth) {
+    return false;
+  }
+
+  const rect = target.getBoundingClientRect();
+
+  return (
+    e.clientX > rect.left + target.clientWidth || e.clientY > rect.top + target.clientHeight
+  );
+}
+
 export default function DatePicker({ value, onChange, label }: DatePickerProps) {
   const [open, setOpen] = useState(false);
   // Día que tiene el foco dentro de la grilla; no es lo mismo que el elegido
   // (con las flechas te movés sin seleccionar hasta apretar Enter).
   const [focused, setFocused] = useState(value);
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -60,17 +86,30 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
     if (!open) return;
 
     function handlePointerDown(e: PointerEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      if (rootRef.current?.contains(e.target as Node)) return;
+      // La barra de scroll del Modal es del contenedor que envuelve al
+      // calendario, así que agarrarla llegaba acá como "click afuera" y
+      // cerraba el panel justo cuando querías bajar para verlo entero.
+      if (isScrollbarPointerDown(e)) return;
+
+      setOpen(false);
     }
 
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [open]);
 
+  // El panel se abre abajo del campo, que suele quedar cerca del final del
+  // modal: sin esto arranca medio tapado y hay que scrollear a mano.
+  useEffect(() => {
+    if (!open) return;
+
+    panelRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [open]);
+
   // El foco sigue a la flecha. Sin esto el lector de pantalla no anuncia el día
   // al que te moviste y las flechas no hacen nada visible.
+  // preventScroll: el scrollIntoView de arriba ya se encarga, y si no compiten.
   useEffect(() => {
     if (!open) return;
 
@@ -180,6 +219,7 @@ export default function DatePicker({ value, onChange, label }: DatePickerProps) 
 
       {open && (
         <div
+          ref={panelRef}
           role="dialog"
           aria-modal="false"
           aria-label={`Elegir ${label.toLowerCase()}`}
