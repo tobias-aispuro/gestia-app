@@ -1,6 +1,8 @@
 import { formatAmount, formatDate } from "@/lib/utils";
+import { PAYMENT_METHOD_SHORT_LABELS } from "@/lib/payment-methods";
 import Badge from "../ui/Badge";
 import type { Currency } from "@/types";
+import type { PaymentMethod } from "@/generated/prisma/enums";
 
 export interface ExpenseRow {
   id: string;
@@ -9,6 +11,7 @@ export interface ExpenseRow {
   amount: number;
   currency: Currency;
   merchant: string | null;
+  paymentMethod: PaymentMethod;
   category: {
     name: string;
     color: string | null;
@@ -48,6 +51,9 @@ export default function ExpenseList({
               <th scope="col" className="text-label px-4 py-3 text-left font-medium">
                 Categoría
               </th>
+              <th scope="col" className="text-label px-4 py-3 text-left font-medium">
+                Medio de pago
+              </th>
               <th scope="col" className="text-label px-0 py-3 text-right font-medium">
                 Monto
               </th>
@@ -71,6 +77,9 @@ export default function ExpenseList({
                 <td className="px-4 py-4">
                   <Badge dotColor={expense.category.color}>{expense.category.name}</Badge>
                 </td>
+                <td className="whitespace-nowrap px-4 py-4 text-[0.8125rem] text-muted">
+                  {PAYMENT_METHOD_SHORT_LABELS[expense.paymentMethod]}
+                </td>
                 <td className="py-4 pl-4 text-right text-[0.875rem] font-medium tabular-nums text-heading">
                   {formatAmount(expense.amount, expense.currency)}
                 </td>
@@ -89,10 +98,16 @@ export default function ExpenseList({
               {expense.merchant && (
                 <p className="mt-0.5 text-xs text-muted">{expense.merchant}</p>
               )}
-              <div className="mt-2 flex items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
                 <Badge dotColor={expense.category.color}>{expense.category.name}</Badge>
                 <span className="text-xs tabular-nums text-faint">
                   {formatDate(expense.date)}
+                </span>
+                <span className="text-xs text-faint" aria-hidden="true">
+                  ·
+                </span>
+                <span className="text-xs text-faint">
+                  {PAYMENT_METHOD_SHORT_LABELS[expense.paymentMethod]}
                 </span>
               </div>
             </div>

@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import { cn, toDateInputValue } from "@/lib/utils";
+import { PAYMENT_METHODS, PAYMENT_METHOD_SHORT_LABELS } from "@/lib/payment-methods";
+import { PaymentMethod } from "@/generated/prisma/enums";
 import Button from "../ui/Button";
 import DatePicker from "../ui/DatePicker";
 import Modal from "../ui/Modal";
@@ -80,6 +82,8 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
   // en que se montó la página.
   const [date, setDate] = useState(() => toDateInputValue(new Date()));
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  // Solo aplica a gastos: Income no tiene medio de pago en la base.
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.CASH);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -104,6 +108,7 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
     setAmount("");
     setDate(toDateInputValue(new Date()));
     setCategoryId(null);
+    setPaymentMethod(PaymentMethod.CASH);
     setAddingCategory(false);
     setNewCategoryName("");
     setError(null);
@@ -165,7 +170,7 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
         description,
         date,
         categoryId,
-        paymentMethod: "CASH",
+        paymentMethod,
       });
       close();
     } catch (err) {
@@ -362,6 +367,34 @@ export default function AddExpenseModal({ categories }: AddExpenseModalProps) {
                 + Nueva
               </button>
             )}
+          </div>
+
+          {/* Medio de pago — como las categorías, no aplica a un ingreso. */}
+          <div className={type === "ingreso" ? "hidden" : undefined}>
+            <p className="text-label mb-2">Medio de pago</p>
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Medio de pago">
+              {PAYMENT_METHODS.map((method) => {
+                const isActive = paymentMethod === method;
+
+                return (
+                  <button
+                    key={method}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setPaymentMethod(method)}
+                    className={cn(
+                      "rounded-full border px-3.5 py-2 text-sm font-medium",
+                      "transition-colors duration-200 ease-out cursor-pointer",
+                      isActive
+                        ? "border-accent text-accent"
+                        : "border-border-subtle text-muted hover:border-border-default hover:text-body",
+                    )}
+                  >
+                    {PAYMENT_METHOD_SHORT_LABELS[method]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Fecha */}

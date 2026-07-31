@@ -8,6 +8,8 @@ import Input from "../ui/Input";
 import Select from "../ui/Select";
 import Badge from "../ui/Badge";
 import { formatAmount, formatDate } from "@/lib/utils";
+import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/lib/payment-methods";
+import type { PaymentMethod } from "@/generated/prisma/enums";
 import type { ExpenseRow } from "./ExpenseList";
 import { updateExpenseAction, deleteExpenseAction } from "@/actions/expense.actions";
 
@@ -56,11 +58,14 @@ export default function EditExpensesModal({
     setSubmitting(true);
     setError(null);
     try {
+      const paymentMethod = form.get("paymentMethod") as PaymentMethod;
+
       await updateExpenseAction(editing.id, {
         description: String(form.get("description")),
         amount: Number(form.get("amount")),
         categoryId,
         merchant: String(form.get("merchant") || ""),
+        paymentMethod,
       });
 
       setExpenses((prev) =>
@@ -71,6 +76,7 @@ export default function EditExpensesModal({
                 description: String(form.get("description")),
                 amount: Number(form.get("amount")),
                 merchant: String(form.get("merchant") || "") || null,
+                paymentMethod,
                 category: category ? { name: category.name, color: category.color } : exp.category,
               }
             : exp,
@@ -137,7 +143,20 @@ export default function EditExpensesModal({
               </Select>
             </div>
 
-            <Input name="merchant" label="Comercio" defaultValue={editing.merchant ?? ""} />
+            <div className="grid grid-cols-2 gap-3">
+              <Input name="merchant" label="Comercio" defaultValue={editing.merchant ?? ""} />
+              <Select
+                name="paymentMethod"
+                label="Medio de pago"
+                defaultValue={editing.paymentMethod}
+              >
+                {PAYMENT_METHODS.map((method) => (
+                  <option key={method} value={method}>
+                    {PAYMENT_METHOD_LABELS[method]}
+                  </option>
+                ))}
+              </Select>
+            </div>
 
             {error && <p className="text-sm text-negative">{error}</p>}
 
