@@ -1,5 +1,6 @@
 import FilterPills from "@/components/expenses/FilterPills";
 import ExpensesSection from "@/components/expenses/ExpensesSection";
+import ExportExpensesModal from "@/components/expenses/ExportExpensesModal";
 import { getCurrentUserId } from "@/lib/auth";
 import * as expenseService from "@/services/expense.service";
 import * as categoryService from "@/services/category.service";
@@ -26,14 +27,26 @@ export default async function GastosPage({ searchParams }: GastosPageProps) {
   ) as Currency;
   const categoryId = params.categoryId || undefined;
 
-  const [expenses, categories] = await Promise.all([
+  // El total sin filtrar es solo para el botón de exportar ("Todo (147)"); va
+  // en el mismo Promise.all para no sumarle un viaje a Neon a la página.
+  const [expenses, categories, totalCount] = await Promise.all([
     expenseService.list(userId, { currency, categoryId }),
     categoryService.list(userId),
+    expenseService.count(userId),
   ]);
 
   return (
     <>
-      <FilterPills currencies={CURRENCIES} categories={categories} />
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4 sm:mb-8">
+        <FilterPills currencies={CURRENCIES} categories={categories} />
+
+        <ExportExpensesModal
+          filteredCount={expenses.length}
+          totalCount={totalCount}
+          currency={currency}
+          categoryId={categoryId}
+        />
+      </div>
 
       <ExpensesSection expenses={expenses} />
     </>

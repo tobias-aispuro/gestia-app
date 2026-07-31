@@ -45,6 +45,10 @@ export async function list(
   return expenses.map(toView);
 }
 
+export function count(userId: string, filters: ListExpensesFilters = {}): Promise<number> {
+  return repo.countByUser(userId, filters);
+}
+
 export async function getById(id: string, userId: string): Promise<ExpenseView> {
   const expense = await repo.findById(id, userId);
 

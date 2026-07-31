@@ -38,6 +38,15 @@ export const createIncomeSchema = z.object({
 
 export const updateIncomeSchema = createIncomeSchema.partial();
 
+// `scope: "all"` ignora currency/categoryId a propósito — son el estado de la
+// vista, no del export.
+export const exportExpensesSchema = z.object({
+  format: z.enum(["excel", "standard"]),
+  scope: z.enum(["filtered", "all"]),
+  currency: z.enum(Currency).optional(),
+  categoryId: z.cuid().optional(),
+});
+
 export const createCategorySchema = z.object({
   name: z.string().trim().min(1, "El nombre es obligatorio").max(50),
   icon: z.string().trim().max(16).optional(),
@@ -54,5 +63,6 @@ export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
 export type ListExpensesFilters = z.infer<typeof listExpensesSchema>;
 export type CreateIncomeInput = z.infer<typeof createIncomeSchema>;
 export type UpdateIncomeInput = z.infer<typeof updateIncomeSchema>;
+export type ExportExpensesInput = z.infer<typeof exportExpensesSchema>;
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
 export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;

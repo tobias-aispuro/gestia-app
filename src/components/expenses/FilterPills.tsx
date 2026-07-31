@@ -36,7 +36,9 @@ export default function FilterPills({ currencies, categories }: FilterPillsProps
   }
 
   return (
-    <div className="mb-6 flex flex-wrap items-center gap-2 sm:mb-8" role="group" aria-label="Filtros">
+    // El margen inferior lo pone el contenedor de la página, que alinea estas
+    // pills con el botón de exportar en la misma fila.
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtros">
       {currencies.map((c) => {
         const isActive = activeCurrency === c;
         return (

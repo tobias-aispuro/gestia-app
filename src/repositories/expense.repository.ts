@@ -44,6 +44,11 @@ export function findAllByUser(userId: string, filters: ListExpensesFilters = {})
   });
 }
 
+/** Cuenta sin traer las filas — el botón de exportar solo necesita el número. */
+export function countByUser(userId: string, filters: ListExpensesFilters = {}) {
+  return prisma.expense.count({ where: buildWhere(userId, filters) });
+}
+
 export function findById(id: string, userId: string) {
   return prisma.expense.findFirst({
     where: { id, userId },
