@@ -23,6 +23,26 @@ interface ExpenseListProps {
   emptyMessage?: string;
 }
 
+/**
+ * El resaltado va en las celdas, no en el `<tr>`: una fila no acepta
+ * `border-radius`, así que redondear el `<tr>` no hace absolutamente nada. Se
+ * redondean las esquinas exteriores de la primera y la última celda, y eso
+ * dibuja la píldora completa.
+ *
+ * Requiere `border-separate` en la tabla — con `border-collapse` (lo que había)
+ * el radio tampoco se aplica, que es por lo que el hover salía cuadrado.
+ *
+ * El radio (12px) se queda por debajo del padding vertical de las celdas
+ * (py-4 = 16px), así que la curva nunca llega a la línea de texto.
+ *
+ * Las filas ya no llevan línea divisoria: el borde inferior de una celda con
+ * las esquinas redondeadas se curva en las puntas y queda torcido. La regla
+ * queda solo debajo del encabezado y el resaltado hace de separación.
+ */
+const rowHighlight =
+  "[&>td]:transition-colors [&>td]:duration-150 hover:[&>td]:bg-surface " +
+  "[&>td:first-child]:rounded-l-xl [&>td:last-child]:rounded-r-xl";
+
 export default function ExpenseList({
   expenses,
   emptyMessage = "No hay gastos en este período.",
@@ -39,33 +59,33 @@ export default function ExpenseList({
     <>
       {/* Desktop / tablet: real table for correct a11y semantics */}
       <div className="hidden overflow-x-auto sm:block">
-        <table className="w-full border-collapse text-sm">
+        {/* border-separate en vez de border-collapse: es la condición para que
+            las celdas acepten border-radius. La regla del encabezado pasa a los
+            <th>, que con border-collapse la heredaban del <tr>. */}
+        <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
-            <tr className="border-b border-border-subtle">
-              <th scope="col" className="text-label px-0 py-3 text-left font-medium">
+            <tr>
+              <th scope="col" className="text-label border-b border-border-subtle py-3 pl-3 pr-4 text-left font-medium">
                 Fecha
               </th>
-              <th scope="col" className="text-label px-4 py-3 text-left font-medium">
+              <th scope="col" className="text-label border-b border-border-subtle px-4 py-3 text-left font-medium">
                 Descripción
               </th>
-              <th scope="col" className="text-label px-4 py-3 text-left font-medium">
+              <th scope="col" className="text-label border-b border-border-subtle px-4 py-3 text-left font-medium">
                 Categoría
               </th>
-              <th scope="col" className="text-label px-4 py-3 text-left font-medium">
+              <th scope="col" className="text-label border-b border-border-subtle px-4 py-3 text-left font-medium">
                 Medio de pago
               </th>
-              <th scope="col" className="text-label px-0 py-3 text-right font-medium">
+              <th scope="col" className="text-label border-b border-border-subtle py-3 pl-4 pr-3 text-right font-medium">
                 Monto
               </th>
             </tr>
           </thead>
           <tbody>
             {expenses.map((expense) => (
-              <tr
-                key={expense.id}
-                className="border-b border-border-subtle last:border-0 transition-colors duration-150 hover:bg-surface"
-              >
-                <td className="whitespace-nowrap py-4 pr-4 text-[0.8125rem] tabular-nums text-faint">
+              <tr key={expense.id} className={rowHighlight}>
+                <td className="whitespace-nowrap py-4 pl-3 pr-4 text-[0.8125rem] tabular-nums text-faint">
                   {formatDate(expense.date)}
                 </td>
                 <td className="px-4 py-4">
@@ -80,7 +100,7 @@ export default function ExpenseList({
                 <td className="whitespace-nowrap px-4 py-4 text-[0.8125rem] text-muted">
                   {PAYMENT_METHOD_SHORT_LABELS[expense.paymentMethod]}
                 </td>
-                <td className="py-4 pl-4 text-right text-[0.875rem] font-medium tabular-nums text-heading">
+                <td className="py-4 pl-4 pr-3 text-right text-[0.875rem] font-medium tabular-nums text-heading">
                   {formatAmount(expense.amount, expense.currency)}
                 </td>
               </tr>
