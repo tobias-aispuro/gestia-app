@@ -2,7 +2,8 @@
 
 import { useId, useState } from "react";
 import type { MouseEvent } from "react";
-import { cn, formatAmount, formatCompactAmount } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import Amount from "../ui/Amount";
 import { Currency } from "@/types";
 import type { MonthlyComparisonPoint } from "@/types";
 
@@ -199,7 +200,7 @@ export default function EvolutionChart({
                 textAnchor="end"
                 className="fill-[var(--text-faint)] text-[11px]"
               >
-                {formatCompactAmount(max * t, currency)}
+                <Amount value={max * t} currency={currency} compact />
               </text>
             </g>
           ))}
@@ -296,7 +297,7 @@ export default function EvolutionChart({
                   {s.label}
                 </span>
                 <span className="tabular-nums text-body">
-                  {formatAmount(active[s.key], currency)}
+                  <Amount value={active[s.key]} currency={currency} />
                 </span>
               </p>
             ))}
@@ -310,7 +311,7 @@ export default function EvolutionChart({
                 )}
               >
                 {activeDiff >= 0 ? "+" : ""}
-                {formatAmount(activeDiff, currency)}
+                <Amount value={activeDiff} currency={currency} />
               </span>
             </p>
           </div>
@@ -336,11 +337,11 @@ export default function EvolutionChart({
             {data.map((d, i) => (
               <tr key={`${d.label}-${i}`} className="border-t border-border-subtle">
                 <th scope="row" className="py-1 font-normal text-muted">{d.label}</th>
-                <td className="py-1 text-right">{formatAmount(d.ingresos, currency)}</td>
-                <td className="py-1 text-right">{formatAmount(d.gastos, currency)}</td>
+                <td className="py-1 text-right"><Amount value={d.ingresos} currency={currency} /></td>
+                <td className="py-1 text-right"><Amount value={d.gastos} currency={currency} /></td>
                 <td className="py-1 text-right">
                   {d.ingresos - d.gastos >= 0 ? "+" : ""}
-                  {formatAmount(d.ingresos - d.gastos, currency)}
+                  <Amount value={d.ingresos - d.gastos} currency={currency} />
                 </td>
               </tr>
             ))}

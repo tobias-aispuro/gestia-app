@@ -14,6 +14,22 @@ export function formatAmount(amount: number, currency: Currency): string {
   }).format(amount);
 }
 
+/**
+ * Reemplazo de un monto con el modo privacidad activo, ej. "$ •••••".
+ *
+ * Conserva el símbolo de la moneda porque no dice nada de cuánta plata hay, y
+ * sin él un ARS y un USD ocultos serían indistinguibles. El símbolo sale de
+ * `formatToParts` y no de un literal para que ARS ("$") y USD ("US$") salgan
+ * como los escribe la misma API que formatea los montos visibles.
+ */
+export function maskedAmount(currency: Currency): string {
+  const symbol = new Intl.NumberFormat("es-AR", { style: "currency", currency })
+    .formatToParts(0)
+    .find((part) => part.type === "currency")?.value;
+
+  return `${symbol ?? "$"} •••••`;
+}
+
 /** Versión corta para ejes de gráficos, ej. "$ 12,3 mil". */
 export function formatCompactAmount(amount: number, currency: Currency): string {
   return new Intl.NumberFormat("es-AR", {

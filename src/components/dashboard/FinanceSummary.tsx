@@ -1,4 +1,5 @@
-import { formatAmount, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import Amount from "../ui/Amount";
 import Card from "../ui/Card";
 import type { Currency } from "@/types";
 
@@ -24,7 +25,7 @@ export default function FinanceSummary({
       <Card>
         <p className="text-label mb-2">Balance acumulado</p>
         <p className="heading-display mb-6 text-4xl sm:text-5xl">
-          {formatAmount(balanceAcumulado, currency)}
+          <Amount value={balanceAcumulado} currency={currency} />
         </p>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -36,7 +37,7 @@ export default function FinanceSummary({
               Ingresos
             </p>
             <p className="text-xl font-semibold tabular-nums text-positive">
-              {formatAmount(ingresos, currency)}
+              <Amount value={ingresos} currency={currency} />
             </p>
           </div>
 
@@ -48,7 +49,7 @@ export default function FinanceSummary({
               Gastos
             </p>
             <p className="text-xl font-semibold tabular-nums text-negative">
-              {formatAmount(gastos, currency)}
+              <Amount value={gastos} currency={currency} />
             </p>
           </div>
         </div>
@@ -65,7 +66,7 @@ export default function FinanceSummary({
             )}
           >
             {balanceMes >= 0 ? "+" : ""}
-            {formatAmount(balanceMes, currency)}
+            <Amount value={balanceMes} currency={currency} />
           </p>
         </Card>
 

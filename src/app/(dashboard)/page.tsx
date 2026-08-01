@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import AddExpenseModal from "@/components/expenses/AddExpenseModal";
 import EditExpensesModal from "@/components/expenses/EditExpensesModal";
 import FinanceSummary from "@/components/dashboard/FinanceSummary";
+import MonthComparison from "@/components/dashboard/MonthComparison";
+import PrivacyToggle from "@/components/layout/PrivacyToggle";
 import SpendingBreakdownCard from "@/components/dashboard/SpendingBreakdownCard";
 import EvolutionChart from "@/components/dashboard/EvolutionChart";
 import Card from "@/components/ui/Card";
@@ -46,9 +48,17 @@ export default async function HomePage() {
           <h1 className="heading-display text-3xl sm:text-4xl">
             {displayName}
           </h1>
+
+          {/* Suspense propio: el saludo tiene que pintar sin esperar una query.
+              El fallback reserva la altura de la línea para que el bloque de
+              abajo no salte cuando llega el dato. */}
+          <Suspense fallback={<div className="mt-2 h-5" />}>
+            <MonthComparisonSection userId={userId} />
+          </Suspense>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <PrivacyToggle />
           <EditExpensesModal expenses={expenses} categories={categories} />
           <AddExpenseModal categories={categories} />
         </div>
@@ -69,6 +79,14 @@ export default async function HomePage() {
       </div>
     </>
   );
+}
+
+// monthOverMonth reusa la llamada cacheada de "Tu evolución": no agrega queries,
+// solo saca dos meses de datos que ya se estaban trayendo para el gráfico.
+async function MonthComparisonSection({ userId }: { userId: string }) {
+  const comparison = await financeService.monthOverMonth(userId, Currency.ARS);
+
+  return <MonthComparison currency={Currency.ARS} comparison={comparison} />;
 }
 
 async function FinanceSummarySection({ userId }: { userId: string }) {
@@ -109,7 +127,14 @@ async function SpendingBreakdownSection({ userId }: { userId: string }) {
 }
 
 async function EvolutionSection({ userId }: { userId: string }) {
-  const evolution = await financeService.recentMonthlyComparison(userId, Currency.ARS, 6);
+  // EVOLUTION_MONTHS y no un 6 suelto: monthOverMonth pide esta misma llamada
+  // con la constante, y cache() indexa por argumentos — un número distinto acá
+  // partiría la caché en dos y duplicaría las queries.
+  const evolution = await financeService.recentMonthlyComparison(
+    userId,
+    Currency.ARS,
+    financeService.EVOLUTION_MONTHS,
+  );
 
   return (
     <Card>

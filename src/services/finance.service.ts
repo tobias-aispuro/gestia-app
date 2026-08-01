@@ -1,8 +1,23 @@
+import { cache } from "react";
 import * as expenseService from "./expense.service";
 import * as incomeService from "./income.service";
 import * as expenseRepo from "@/repositories/expense.repository";
 import * as incomeRepo from "@/repositories/income.repository";
-import type { Currency, FinanceOverview, MonthlyComparisonPoint } from "@/types";
+import type {
+  Currency,
+  FinanceOverview,
+  MonthlyComparisonPoint,
+  MonthOverMonth,
+  MonthOverMonthMetric,
+} from "@/types";
+
+/**
+ * Ventana del gráfico de evolución. Es una constante y no un número suelto en
+ * cada call site porque `recentMonthlyComparison` está cacheada por argumentos:
+ * si el gráfico pidiera 6 y `monthOverMonth` otro número, serían dos entradas
+ * de caché distintas y se duplicarían las queries.
+ */
+export const EVOLUTION_MONTHS = 6;
 
 /**
  * Los números del bloque de balance del dashboard. Vive acá y no en
@@ -57,11 +72,11 @@ function bucketByMonth(rows: { amount: unknown; date: Date }[]): Map<string, num
  * Dos queries de rango (una por modelo) y el agrupado por mes en JS: pedir un
  * total por mes serían 2 × N queries para dibujar un solo gráfico.
  */
-export async function recentMonthlyComparison(
+export const recentMonthlyComparison = cache(async (
   userId: string,
   currency: Currency,
   months: number,
-): Promise<MonthlyComparisonPoint[]> {
+): Promise<MonthlyComparisonPoint[]> => {
   const now = new Date();
 
   const periods = Array.from({ length: months }, (_, i) => {
@@ -89,4 +104,47 @@ export async function recentMonthlyComparison(
       gastos: gastosPorMes.get(key) ?? 0,
     };
   });
+});
+
+function metric(current: number, previous: number): MonthOverMonthMetric {
+  return {
+    delta: current - previous,
+    pct: previous === 0 ? null : ((current - previous) / previous) * 100,
+  };
 }
+
+/**
+ * Mes en curso contra el anterior. No pega una sola query propia: reusa la
+ * misma llamada cacheada que dibuja el gráfico de evolución, que ya trae los
+ * últimos `EVOLUTION_MONTHS` meses de las dos series.
+ *
+ * Devuelve `null` cuando el mes anterior cerró sin movimientos: con solo los
+ * totales no se distingue "no gastó nada" de "todavía no usaba la app", y
+ * mostrar "+100%" contra un mes vacío sería inventar una tendencia.
+ */
+export const monthOverMonth = cache(async (
+  userId: string,
+  currency: Currency,
+): Promise<MonthOverMonth | null> => {
+  const points = await recentMonthlyComparison(userId, currency, EVOLUTION_MONTHS);
+
+  const current = points[points.length - 1];
+  const previous = points[points.length - 2];
+
+  if (!current || !previous || (previous.ingresos === 0 && previous.gastos === 0)) {
+    return null;
+  }
+
+  // El mismo criterio UTC que usa recentMonthlyComparison para armar los meses.
+  const now = new Date();
+  const previousMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+
+  return {
+    previousLabel: new Intl.DateTimeFormat("es-AR", {
+      month: "long",
+      timeZone: "UTC",
+    }).format(previousMonth),
+    ingresos: metric(current.ingresos, previous.ingresos),
+    gastos: metric(current.gastos, previous.gastos),
+  };
+});

@@ -58,23 +58,39 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        "fixed z-50 flex border-border-subtle bg-background",
+        // bg-rail y no bg-background: el rail es una superficie propia, si no
+        // queda del mismo color que el área de contenido y no se distingue.
+        "fixed z-50 flex bg-rail",
         // Mobile: bottom tab bar
-        "inset-x-0 bottom-0 h-(--sidebar-width-mobile) flex-row items-stretch justify-around border-t px-1",
-        // Desktop (sm+): left rail expandido con etiquetas
+        "inset-x-0 bottom-0 h-(--sidebar-width-mobile) flex-row items-stretch justify-around px-1",
+        // Desktop (sm+): left rail expandido con etiquetas. Sin padding lateral
+        // acá: lo llevan los items, para que puedan tocar el borde interno
+        // donde se apoya el indicador de sección.
         "sm:inset-x-auto sm:inset-y-0 sm:bottom-auto sm:left-0 sm:h-screen sm:w-(--sidebar-width)",
-        "sm:flex-col sm:items-stretch sm:justify-start sm:border-t-0 sm:border-r sm:px-3 sm:py-6",
+        "sm:flex-col sm:items-stretch sm:justify-start sm:px-0 sm:py-7",
       )}
     >
+      {/* Regla de margen. Hace de separador contra el contenido y de riel del
+          indicador: el item activo la engrosa a acento sólido. Arriba en mobile,
+          en el borde interno en desktop. */}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute bg-rail-rule",
+          "inset-x-0 top-0 h-px",
+          "sm:inset-x-auto sm:inset-y-0 sm:right-0 sm:h-auto sm:w-px",
+        )}
+      />
+
       {/* Wordmark — desktop only. El punto retoma el acento dorado, guiño al separador decimal de un monto. */}
-      <div className="hidden sm:mb-8 sm:flex sm:items-center sm:px-2">
-        <span className="heading-display text-lg leading-none">
+      <div className="hidden sm:mb-9 sm:flex sm:items-baseline sm:px-5">
+        <span className="heading-display text-[1.0625rem] leading-none tracking-[-0.02em]">
           Gastia<span className="text-accent">.</span>
         </span>
       </div>
 
       {/* Nav items */}
-      <nav className="flex flex-1 flex-row items-stretch justify-around gap-1 sm:flex-col sm:items-stretch sm:justify-start sm:gap-1">
+      <nav className="flex flex-1 flex-row items-stretch justify-around gap-1 sm:flex-col sm:items-stretch sm:justify-start sm:gap-0.5">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.href;
 
@@ -86,13 +102,19 @@ export default function Sidebar() {
               className={cn(
                 "relative flex flex-col items-center justify-center gap-1 rounded-md px-1.5 py-1.5",
                 "transition-colors duration-200 ease-out",
-                "sm:flex-row sm:justify-start sm:gap-3 sm:px-3 sm:py-2.5",
+                // Sin píldora rellena en el activo: bg-surface es el material de
+                // las tarjetas del dashboard, y usarlo acá es lo que hacía que
+                // el rail se leyera como contenido. La posición la marcan la
+                // regla encendida y el color del texto.
+                "sm:flex-row sm:justify-start sm:gap-3 sm:rounded-none sm:px-5 sm:py-2.5",
                 isActive
-                  ? "text-accent sm:bg-surface sm:text-heading"
-                  : "text-muted hover:text-body sm:hover:bg-surface/60 sm:hover:text-body",
+                  ? "text-accent sm:text-heading sm:font-medium"
+                  : "text-body hover:text-heading sm:hover:bg-white/[0.035]",
               )}
             >
-              <span className="shrink-0">{item.icon}</span>
+              <span className={cn("shrink-0 transition-colors", isActive && "sm:text-accent")}>
+                {item.icon}
+              </span>
 
               {/* Mobile: caption corta debajo del ícono */}
               <span className="text-[10px] leading-none font-medium sm:hidden">
@@ -105,10 +127,18 @@ export default function Sidebar() {
               </span>
 
               {isActive && (
-                <span
-                  aria-hidden
-                  className="hidden h-5 w-[3px] rounded-full bg-accent sm:absolute sm:left-0 sm:top-1/2 sm:block sm:-translate-y-1/2"
-                />
+                <>
+                  {/* El tramo encendido de la regla: arriba de la tab en mobile… */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-2 top-0 h-[2px] rounded-full bg-accent sm:hidden"
+                  />
+                  {/* …y sobre el borde interno del rail en desktop. */}
+                  <span
+                    aria-hidden
+                    className="absolute inset-y-1.5 right-0 hidden w-[2px] rounded-l-full bg-accent sm:block"
+                  />
+                </>
               )}
             </Link>
           );
@@ -118,7 +148,8 @@ export default function Sidebar() {
       {/* Cuenta — desktop only, pegado abajo del rail.
           El redirect a /sign-in tras cerrar sesión lo maneja el middleware
           (__internal_invokeMiddlewareOnAuthStateChange, default true), no un prop acá. */}
-      <div className="hidden sm:mt-auto sm:flex sm:items-center sm:px-2 sm:pt-4">
+      <div className="hidden sm:mt-auto sm:block sm:px-5 sm:pt-5">
+        <div className="separator mb-4" />
         <UserButton />
       </div>
     </aside>

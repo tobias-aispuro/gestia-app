@@ -57,6 +57,25 @@ export interface MonthlyComparisonPoint {
   gastos: number;
 }
 
+/** Variación de una métrica contra el mismo dato del mes anterior. */
+export interface MonthOverMonthMetric {
+  /** Diferencia absoluta; positiva significa más que el mes pasado. */
+  delta: number;
+  /**
+   * Variación porcentual, o `null` si el mes anterior cerró en 0: dividir por
+   * cero daría Infinity y "+∞%" no le dice nada a nadie.
+   */
+  pct: number | null;
+}
+
+/** Mes en curso contra el anterior, para el bloque de balance. */
+export interface MonthOverMonth {
+  /** Nombre del mes anterior en castellano, ej. "junio". */
+  previousLabel: string;
+  ingresos: MonthOverMonthMetric;
+  gastos: MonthOverMonthMetric;
+}
+
 export interface CategoryTotal {
   categoryId: string;
   categoryName: string;

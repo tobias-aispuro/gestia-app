@@ -1,4 +1,4 @@
-import { formatAmount } from "@/lib/utils";
+import Amount from "../ui/Amount";
 import type { Currency } from "@/types";
 
 interface CategorySlice {
@@ -94,7 +94,7 @@ export default function CategoryBreakdown({
             Total
           </span>
           <span className="text-[0.9375rem] font-semibold tabular-nums text-heading">
-            {formatAmount(grandTotal, currency)}
+            <Amount value={grandTotal} currency={currency} />
           </span>
         </div>
       </div>
@@ -117,7 +117,7 @@ export default function CategoryBreakdown({
                   {slice.categoryName}
                 </span>
                 <span className="shrink-0 text-[0.8125rem] font-medium tabular-nums text-heading">
-                  {formatAmount(slice.total, currency)}
+                  <Amount value={slice.total} currency={currency} />
                 </span>
               </div>
               <span className="pl-[18px] text-xs tabular-nums text-muted">{pct}% del total</span>

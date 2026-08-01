@@ -8,6 +8,16 @@
   --bg-surface: #1a1a19;
   --bg-raised: #222221;
 
+  /* Rail de navegación — superficie propia, un escalón por debajo del fondo del
+     contenido y corrida al cálido para que se lea como tinta y no como gris.
+     Va más oscuro y no más claro a propósito: las tarjetas ya ocupan
+     --bg-surface, así que un rail más claro se leería como una tarjeta gigante. */
+  --bg-rail: #0b0a08;
+
+  /* Regla de margen: separa el rail del contenido y sirve de riel al indicador
+     de sección, que la engrosa a --accent sólido donde estás parado. */
+  --rail-rule: rgba(212, 168, 83, 0.16);
+
   /* Borders */
   --border-subtle: #2a2a28;
   --border-default: #3a3a37;
@@ -54,6 +64,8 @@
   --color-foreground: var(--text-body);
   --color-surface: var(--bg-surface);
   --color-raised: var(--bg-raised);
+  --color-rail: var(--bg-rail);
+  --color-rail-rule: var(--rail-rule);
   --color-border-subtle: var(--border-subtle);
   --color-border-default: var(--border-default);
   --color-heading: var(--text-heading);

@@ -1,3 +1,4 @@
+export { default as Amount } from "./Amount";
 export { default as Button } from "./Button";
 export { default as IconButton } from "./IconButton";
 export { default as Badge } from "./Badge";

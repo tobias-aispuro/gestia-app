@@ -7,7 +7,8 @@ import Modal from "../ui/Modal";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
 import Badge from "../ui/Badge";
-import { formatAmount, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import Amount from "../ui/Amount";
 import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/lib/payment-methods";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import type { ExpenseRow } from "./ExpenseList";
@@ -192,7 +193,7 @@ export default function EditExpensesModal({
                 </div>
                 <Badge dotColor={exp.category.color}>{exp.category.name}</Badge>
                 <span className="shrink-0 text-sm font-medium tabular-nums text-heading">
-                  {formatAmount(exp.amount, exp.currency)}
+                  <Amount value={exp.amount} currency={exp.currency} />
                 </span>
               </button>
             ))}

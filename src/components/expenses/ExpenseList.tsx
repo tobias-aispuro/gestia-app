@@ -1,4 +1,5 @@
-import { formatAmount, formatDate } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
+import Amount from "../ui/Amount";
 import { PAYMENT_METHOD_SHORT_LABELS } from "@/lib/payment-methods";
 import Badge from "../ui/Badge";
 import type { Currency } from "@/types";
@@ -101,7 +102,7 @@ export default function ExpenseList({
                   {PAYMENT_METHOD_SHORT_LABELS[expense.paymentMethod]}
                 </td>
                 <td className="py-4 pl-4 pr-3 text-right text-[0.875rem] font-medium tabular-nums text-heading">
-                  {formatAmount(expense.amount, expense.currency)}
+                  <Amount value={expense.amount} currency={expense.currency} />
                 </td>
               </tr>
             ))}
@@ -132,7 +133,7 @@ export default function ExpenseList({
               </div>
             </div>
             <span className="shrink-0 text-sm font-medium tabular-nums text-heading">
-              {formatAmount(expense.amount, expense.currency)}
+              <Amount value={expense.amount} currency={expense.currency} />
             </span>
           </div>
         ))}
